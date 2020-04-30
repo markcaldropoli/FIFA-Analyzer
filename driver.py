@@ -11,6 +11,7 @@ def printMenuOptions():
     print("2: Get number of right-footed vs. left-footed players")
     print("3: Get the highest paid player at each position")
     print("4: Get the highest paid player at a specific position")
+    print("5: Get the club with the highest average player rating in the world")
     print("7: Quit Program\n")
 
 # Handle user's input
@@ -24,6 +25,7 @@ def handleUserInput(menuChoice):
         pos = input("Please enter a position: ")
         print()
         getHighestPaidAtPosition(pos)
+    elif menuChoice == 5: getHighestRatedTeam()
     elif menuChoice == 7: sys.exit(0)
     else: print("Please choose a valid option.")
 
@@ -96,6 +98,37 @@ def getHighestPaid():
     for pos in positions:
         getHighestPaidAtPosition(pos)
 
+# Get the highest rated team in the world
+def getHighestRatedTeam():
+    global col
+
+    # Get all players that have a club and sort them by club
+    res = col.find({"Club" : { "$ne" : ""}}).sort("Club")
+
+    currClub = res[0]["Club"]
+    rating = 0
+    numPlayers = 0
+
+    bestAvg = 0
+    bestTeam = None
+
+    for x in res:
+        if(x["Club"] != currClub):
+            avg = round(rating / numPlayers, 2)
+
+            if avg > bestAvg:
+                bestAvg = avg
+                bestTeam = currClub
+
+            currClub = x["Club"]
+            rating = 0
+            numPlayers = 0
+
+        rating += int(x["Overall"])
+        numPlayers += 1
+
+    print("The club with the highest rated team is " + bestTeam + " with an average rating of " + str(bestAvg) + "!")
+
 def main():
     global col
 
@@ -107,7 +140,11 @@ def main():
     fileIn.close()
 
     # Create MongoDB connection
-    client = MongoClient("mongodb+srv://" + username + ":" + password + "@cluster0-3fgun.mongodb.net/test?retryWrites=true&w=majority")
+    while(True):
+        try:
+            client = MongoClient("mongodb+srv://" + username + ":" + password + "@cluster0-3fgun.mongodb.net/test?retryWrites=true&w=majority")
+            break
+        except: continue
 
     db = client.fifa    # Access database
     col = db.players    # Access collection
