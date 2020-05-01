@@ -11,13 +11,15 @@ def printMenuOptions():
     print("2: Get number of right-footed vs. left-footed players")
     print("3: Get the highest paid player at each position")
     print("4: Get the highest paid player at a specific position")
-    print("5: Get the club with the highest average player rating in the world")
+    print("5: Get the clubs with the highest average player rating in the world")
+    print("6: Get the nations with the highest average potential rating")
     print("7: Quit Program\n")
 
 # Handle user's input
 def handleUserInput(menuChoice):
     global col
 
+    # Call function based on user input
     if menuChoice == 1: getHighestRated()
     elif menuChoice == 2: getNumFooted()
     elif menuChoice == 3: getHighestPaid()
@@ -25,7 +27,22 @@ def handleUserInput(menuChoice):
         pos = input("Please enter a position: ")
         print()
         getHighestPaidAtPosition(pos)
-    elif menuChoice == 5: getHighestRatedTeam()
+    elif menuChoice == 5:
+        while(True):
+            try:
+                nClubs = int(input("Please enter a number of clubs: "))
+                break
+            except: continue
+        print()
+        getHighestRatedClubs(nClubs)
+    elif menuChoice == 6:
+        while(True):
+            try:
+                nNations = int(input("Please enter a number of nations: "))
+                break
+            except: continue
+        print()
+        getHighestPotentialNations(nNations)
     elif menuChoice == 7: sys.exit(0)
     else: print("Please choose a valid option.")
 
@@ -46,6 +63,7 @@ def getHighestRated():
 def getNumFooted():
     global col
 
+    # Get number of each foot preference
     right = col.count_documents({"Preferred Foot" : "Right"})
     left = col.count_documents({"Preferred Foot" : "Left"})
     na = col.count_documents({"Preferred Foot" : ""})
@@ -56,6 +74,7 @@ def getNumFooted():
     print("Left-Footed Players:\t\t" + str(left))
     print("Preferred Foot Not Specified:\t" + str(na) + "\n")
 
+    # Calculate percentages
     pctRight = round((right / total) * 100, 2)
     pctLeft = round((left / total) * 100, 2)
     pctNA = round((na / total) * 100, 2)
@@ -69,6 +88,7 @@ def getHighestPaidAtPosition(pos):
     global col
     global positions
 
+    # Check if position exists
     if pos not in positions:
         print("Position does not exist.")
         return
@@ -81,11 +101,14 @@ def getHighestPaidAtPosition(pos):
         val = str(x["Value"])
         tempSalary = val[1:]
         salary = 0
+
+        # Convert abbreviated form to int form
         if "M" in tempSalary:
             salary = float(tempSalary[:-1]) * 1000000
         elif "K" in tempSalary:
             salary = float(tempSalary[:-1]) * 1000
 
+        # Check if current salary is greater than the current highest
         if salary > highestSalary:
             playerName = x["Name"]
             highestSalary = salary
@@ -95,39 +118,112 @@ def getHighestPaidAtPosition(pos):
 # Get the highest paid player at each position
 def getHighestPaid():
     global positions
+
     for pos in positions:
         getHighestPaidAtPosition(pos)
 
 # Get the highest rated team in the world
-def getHighestRatedTeam():
+def getHighestRatedClubs(nClubs):
     global col
 
-    # Get all players that have a club and sort them by club
-    res = col.find({"Club" : { "$ne" : ""}}).sort("Club")
+    clubs = []
 
-    currClub = res[0]["Club"]
-    rating = 0
-    numPlayers = 0
+    print("Top " + str(nClubs) + " clubs with the highest average player rating:")
 
-    bestAvg = 0
-    bestTeam = None
+    for i in range(0, nClubs):
+        # Get all players that have a club and sort them by club
+        res = col.find({"Club" : { "$ne" : ""}}).sort("Club")
 
-    for x in res:
-        if(x["Club"] != currClub):
-            avg = round(rating / numPlayers, 2)
+        currClub = res[0]["Club"]
+        rating = 0
+        numPlayers = 0
 
-            if avg > bestAvg:
-                bestAvg = avg
-                bestTeam = currClub
+        bestAvg = 0
+        bestClub = None
 
-            currClub = x["Club"]
-            rating = 0
-            numPlayers = 0
+        for x in res:
+            # If nation already counted skip
+            if(x["Club"] in clubs): continue
 
-        rating += int(x["Overall"])
-        numPlayers += 1
+            # Check if end of a specific club
+            if(x["Club"] != currClub):
+                avg = round(rating / numPlayers, 2)
 
-    print("The club with the highest rated team is " + bestTeam + " with an average rating of " + str(bestAvg) + "!")
+                # Check if club has better rating than the current best club
+                if avg > bestAvg:
+                    bestAvg = avg
+                    bestClub = currClub
+
+                # Reset values for new club
+                currClub = x["Club"]
+                rating = 0
+                numPlayers = 0
+
+            rating += int(x["Overall"])
+            numPlayers += 1
+
+        # Account for last team
+        avg = round(rating / numPlayers, 2)
+
+        if avg > bestAvg:
+            bestAvg = avg
+            bestClub = currClub
+
+        # Add current best rated club to list of clubs
+        clubs.append(bestClub)
+
+        print(str(i+1) + ". " + bestClub + " with an average rating of " + str(bestAvg))
+
+# Get the nations with the highest average potential
+def getHighestPotentialNations(nNations):
+    global col
+
+    nations = []
+
+    print("Top " + str(nNations) + " nations with the highest average potential:")
+
+    for i in range(0, nNations):
+        # Get all players and sort them by nationality
+        res = col.find().sort("Nationality")
+
+        currNation = res[0]["Nationality"]
+        potential = 0
+        numPlayers = 0
+        currBest = None
+        bestAvg = 0
+
+        for x in res:
+            # If nation already counted skip
+            if(x["Nationality"] in nations): continue
+
+            # Check if end of a specific nation
+            if(x["Nationality"] != currNation):
+                avg = round(potential / numPlayers, 2)
+
+                # Check if nation has better rating than the current best
+                if avg > bestAvg:
+                    bestAvg = avg
+                    currBest = currNation
+
+                # Reset values for new nation
+                currNation = x["Nationality"]
+                potential = 0
+                numPlayers = 0
+
+            potential += int(x["Potential"])
+            numPlayers += 1
+
+        # Account for last nation
+        avg = round(potential / numPlayers, 2)
+
+        if avg > bestAvg:
+            bestAvg = avg
+            currBest = currNation
+
+        # Add current best rated nation to list of nations
+        nations.append(currBest)
+
+        print(str(i+1) + ". " + currBest + " with a potential rating of " + str(bestAvg))
 
 def main():
     global col
