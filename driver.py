@@ -113,14 +113,20 @@ def getHighestPaidAtPosition(pos):
             playerName = x["Name"]
             highestSalary = salary
 
-    print(pos + ": " + playerName + " €" + "{:,.2f}".format(round(highestSalary,2)))
+    print(pos + ": " + playerName + " €" + "{:,.2f}".format(round(highestSalary, 2)))
+
+    return round(highestSalary, 2)
 
 # Get the highest paid player at each position
 def getHighestPaid():
     global positions
 
+    total = 0
+
     for pos in positions:
-        getHighestPaidAtPosition(pos)
+        total += getHighestPaidAtPosition(pos)
+
+    print("That means if these players were a team, they would cost " + "€" + "{:,.2f}".format(round(total, 2)) + "!!")
 
 # Get the highest rated team in the world
 def getHighestRatedClubs(nClubs):
