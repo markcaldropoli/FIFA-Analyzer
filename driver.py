@@ -189,8 +189,11 @@ def getHighestPotentialNations(nNations):
         currNation = res[0]["Nationality"]
         potential = 0
         numPlayers = 0
+        rating = 0
+
         currBest = None
         bestAvg = 0
+        actRating = 0
 
         for x in res:
             # If nation already counted skip
@@ -199,31 +202,39 @@ def getHighestPotentialNations(nNations):
             # Check if end of a specific nation
             if(x["Nationality"] != currNation):
                 avg = round(potential / numPlayers, 2)
+                avgRating = round(rating / numPlayers, 2)
 
                 # Check if nation has better rating than the current best
                 if avg > bestAvg:
                     bestAvg = avg
                     currBest = currNation
+                    actRating = avgRating
 
                 # Reset values for new nation
                 currNation = x["Nationality"]
                 potential = 0
                 numPlayers = 0
+                rating = 0
 
             potential += int(x["Potential"])
             numPlayers += 1
+            rating += int(x["Overall"])
 
         # Account for last nation
         avg = round(potential / numPlayers, 2)
+        avgRating = round(rating / numPlayers, 2)
 
         if avg > bestAvg:
             bestAvg = avg
             currBest = currNation
+            actRating = avgRating
 
         # Add current best rated nation to list of nations
         nations.append(currBest)
 
-        print(str(i+1) + ". " + currBest + " with a potential rating of " + str(bestAvg))
+        diff = round(((bestAvg - actRating) / bestAvg) * 100, 2)
+
+        print(str(i+1) + ". " + currBest + " with a potential rating of " + str(bestAvg) + ". The nation\'s current rating is " + str(actRating) + " which is an improvement of " + str(diff) + "%")
 
 def main():
     global col
